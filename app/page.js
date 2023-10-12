@@ -1,6 +1,7 @@
 "use client"
 import Image from "next/image";
 import ReactPlayer from "react-player";
+import { createState, useState } from 'state-pool';
 import {
   Throwable,
   Level,
@@ -8,29 +9,7 @@ import {
   Team,
 } from './types'
 
-function MainStuff() {
-  const people = [
-    {
-      name: "Calvin Hawkins",
-      email: "calvin.hawkins@example.com",
-      image:
-        "https://images.unsplash.com/photo-1491528323818-fdd1faba62cc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    },
-  ];
-  return (
-    <ul className="divide-y divide-gray-200">
-      {people.map((person) => (
-        <li key={person.email} className="flex py-4">
-          <img className="w-10 h-10 rounded-full" src={person.image} alt="" />
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-900">{person.name}</p>
-            <p className="text-sm text-gray-500">{person.email}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
 
 function Card({ styling, children }) {
   return (
@@ -47,58 +26,34 @@ function Card({ styling, children }) {
 
 const videos = [
   {
+    id: 1,
     src: "https://giistyxelor.s3.amazonaws.com/giists/video/video0cP3w019TiZYYcUy22WY.mp4",
     location: "Jungle",
     level: Level.MIRAGE,
     site: Site.MID,
     team: Team.T,
     variation: 0,
-    type: Throwable.SMOKE
+    type: Throwable.SMOKE,
+    instructions: "Keep holding D, then jump throw"
   },
   {
+    id: 2,
     src: "https://giistyxelor.s3.amazonaws.com/giists/video/video0cP3w019TiZYYcUy22WY.mp4",
     location: "Jungle",
     level: Level.MIRAGE,
     site: Site.MID,
     team: Team.T,
     variation: 0,
-    type: Throwable.SMOKE
+    type: Throwable.SMOKE,
+    instructions: "lineup with the wall"
   },
 ]
 
-/**
- * @description A card showing a GIF of a lineup.
- * The GIF is the video. Clicking on a card will open a modal with the GIF playing.
- */
-function VideoCard(video) {
-  function title(video) {
-    const variation = video.variation === 0 ? "" : `(${video.variation})`
-    return `${video.location} ${video.level} ${video.team} ${variation}`
-  }
-  return (
-    <>
-      <div className="mt-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <ReactPlayer
-
-            url='https://giistyxelor.s3.amazonaws.com/giists/video/video0cP3w019TiZYYcUy22WY.mp4'
-            controls={false}
-            playing={true}
-            style={{
-              borderRadius: "0.5rem",
-              padding: "1.8rem",
-              boxShadow: "0px 0px 10px 0px rgba(0,0,0,0.2)",
-              backgroundColor: "#2e2e2e",
-            }}
-          />
-          <p className="mx-auto text-center text-gray-500 uppercase ">
-            {title(video)}
-          </p>
-        </div>
-      </div>
-    </>
-  )
+function getVideoById(id) {
+  return videos.filter((video) => video.id === id)[0]
 }
+
+
 
 function Hero() {
   return (
@@ -117,12 +72,82 @@ function Hero() {
   );
 }
 
+const activeVideo = createState(null)
+
 export default function Home() {
+
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [activeVideo, setActiveVideo] = useState(null)
+
+  let videoCards = videos.map((video) => (
+    <VideoCard {...video} />
+  ))
+
+
+  /**
+   * @description A card showing a GIF of a lineup.
+   * The GIF is the video. Clicking on a card will open a modal with the GIF playing.
+   */
+  function VideoCard(video) {
+    function title(video) {
+      const variation = video.variation === 0 ? "" : `(${video.variation})`
+      return `${video.location} ${video.level} ${video.team} ${variation}`
+    }
+
+    function onClickCallback(e) {
+      // e.preventDefault()
+      // copy e.target into ModalContent
+      const id = parseInt(e.target.parentNode.parentNode.id)
+      setActiveVideo(getVideoById(id))
+      console.log(activeVideo)
+      // setActiveVideo('huh')
+      onOpen()
+    }
+
+    let card = (
+      <div className="mt-8" onClick={onClickCallback} id={video.id}>
+        <ReactPlayer
+          url='https://giistyxelor.s3.amazonaws.com/giists/video/video0cP3w019TiZYYcUy22WY.mp4'
+          controls={false}
+          playing={true}
+          style={{
+            borderRadius: "0.5rem",
+            padding: "1.8rem",
+            boxShadow: "0px 0px 10px 0px rgba(0,0,0,0.2)",
+            backgroundColor: "#2e2e2e",
+          }}
+        />
+        <p className="mx-auto text-center text-gray-500 uppercase ">
+          {title(video)}
+        </p>
+      </div>
+    )
+    return card
+  }
+
+
   return (
     <div className="px-8" style={{
       backgroundColor: "#272727"
     }}>
       <Hero />
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Modal Title</ModalHeader>
+              <ModalBody>
+                {/* Set dynamically */}
+                <VideoCard video={activeVideo} />
+              </ModalBody>
+              <ModalFooter>
+
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       <Card>
         {/* put stuff in here for filters
           look up "nextJS forms"

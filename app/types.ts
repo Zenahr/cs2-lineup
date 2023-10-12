@@ -37,6 +37,7 @@ interface Video {
     team: Team;
     variation: number;
     type: Throwable;
+    instructions: string;
 }
 
 export {
